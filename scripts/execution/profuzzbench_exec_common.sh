@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 DOCIMAGE=$1   #name of the docker image
 RUNS=$2       #number of runs
@@ -9,13 +10,14 @@ OUTDIR=$5     #name of the output folder created inside the docker container
 OPTIONS=$6    #all configured options for fuzzing
 TIMEOUT=$7    #time for fuzzing
 SKIPCOUNT=$8  #used for calculating coverage over time. e.g., SKIPCOUNT=5 means we run gcovr after every 5 test cases
-
+declare -i START_CPU_NUM=$9 # cpu number assigned for the docker container
 #keep all container ids
 cids=()
 
 #create one container for each run
 for i in $(seq 1 $RUNS); do
-  id=$(docker run --cpus=1 -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}")
+  declare -i DOCKER_CPU_NUM=${START_CPU_NUM}+$i
+  id=$(docker run --security-opt seccomp:unconfined --cpuset-cpus=${DOCKER_CPU_NUM} -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}")
   cids+=(${id::12}) #store only the first 12 characters of a container ID
 done
 

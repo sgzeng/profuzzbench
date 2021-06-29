@@ -6,18 +6,19 @@ RUNS=$2       #number of runs
 SAVETO=$3     #path to folder keeping the results
 
 FUZZER=$4     #fuzzer name (e.g., aflnet) -- this name must match the name of the fuzzer folder inside the Docker container
-OUTDIR=$5     #name of the output folder created inside the docker container
-OPTIONS=$6    #all configured options for fuzzing
-TIMEOUT=$7    #time for fuzzing
-SKIPCOUNT=$8  #used for calculating coverage over time. e.g., SKIPCOUNT=5 means we run gcovr after every 5 test cases
-declare -i START_CPU_NUM=$9 # cpu number assigned for the docker container
+CE=$5         # concolic excutor name (e.g., qsym) -- this name must match the name of the concolic excutor folder inside the Docker container
+OUTDIR=$6     #name of the output folder created inside the docker container
+OPTIONS=$7    #all configured options for fuzzing
+TIMEOUT=$8    #time for fuzzing
+SKIPCOUNT=$9  #used for calculating coverage over time. e.g., SKIPCOUNT=5 means we run gcovr after every 5 test cases
+declare -i START_CPU_NUM=$10 # cpu number assigned for the docker container
 #keep all container ids
 cids=()
 
 #create one container for each run
 for i in $(seq 1 $RUNS); do
   declare -i DOCKER_CPU_NUM=${START_CPU_NUM}+$i
-  id=$(docker run --security-opt seccomp:unconfined --cpuset-cpus=${DOCKER_CPU_NUM} -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}")
+  id=$(docker run --security-opt seccomp:unconfined --cpuset-cpus=${DOCKER_CPU_NUM} -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${CE} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}")
   cids+=(${id::12}) #store only the first 12 characters of a container ID
 done
 

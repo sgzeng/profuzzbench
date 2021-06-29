@@ -12,6 +12,7 @@ RUN apt-get -y update && \
     libgnutls28-dev \
     python3-pip \
     nano \
+    tmux \
     net-tools \
     vim
 
@@ -46,6 +47,9 @@ COPY --chown=ubuntu:ubuntu cov_script.sh ${WORKDIR}/cov_script
 COPY --chown=ubuntu:ubuntu run.sh ${WORKDIR}/run
 COPY --chown=ubuntu:ubuntu clean.sh ${WORKDIR}/ftpclean
 
+RUN chown -R ubuntu:ubuntu /home/ubuntu/ && \
+    chown -R ubuntu:ubuntu /work_dir
+USER ubuntu
 # Download and compile LightFTP for fuzzing
 RUN cd $WORKDIR && \
     git clone https://github.com/hfiref0x/LightFTP.git && \

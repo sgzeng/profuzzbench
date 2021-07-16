@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+# set -x
 
 DOCIMAGE=$1   #name of the docker image
 RUNS=$2       #number of runs
@@ -17,7 +17,7 @@ cids=()
 #create one container for each run
 for i in $(seq 1 $RUNS); do
   declare -i DOCKER_CPU_NUM=${START_CPU_NUM}+$i
-  id=$(docker run --security-opt seccomp:unconfined --cpuset-cpus=${DOCKER_CPU_NUM} -d -it $DOCIMAGE /bin/bash -c "cd ${WORKDIR} && run ${FUZZER} ${OUTDIR} '${OPTIONS}' ${TIMEOUT} ${SKIPCOUNT}")
+  id=$(docker run --security-opt seccomp:unconfined --cpuset-cpus=${DOCKER_CPU_NUM} -d -it $DOCIMAGE /bin/bash -c "/home/ubuntu/experiments/run ${FUZZER} ${OUTDIR} \"${OPTIONS}\" ${TIMEOUT} ${SKIPCOUNT}")
   cids+=(${id::12}) #store only the first 12 characters of a container ID
 done
 
@@ -41,4 +41,4 @@ for id in ${cids[@]}; do
   index=$((index+1))
 done
 
-printf "\n${FUZZER^^}: I am done!"
+printf "\n${FUZZER^^}: I am done!\n"

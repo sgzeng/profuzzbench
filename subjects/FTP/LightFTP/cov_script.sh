@@ -24,7 +24,7 @@ echo "Time,l_per,l_abs,b_per,b_abs" >> $covfile
 #clear ftp data
 #this is a LightFTP-specific step
 #we need to clean the ftp shared folder to prevent underterministic behaviors.
-ftpclean
+./ftpclean_afl.sh
 
 #files stored in replayable-* folders are structured
 #in such a way that messages are separated
@@ -37,37 +37,37 @@ else
 fi
 
 #process initial seed corpus first
-for f in $(echo $folder/$testdir/*.raw); do 
+for f in $(echo $folder/$testdir/*.raw); do
   time=$(stat -c %Y $f)
 
   #terminate running server(s)
   pkill fftp
 
-  ftpclean  
+  ./ftpclean_afl.sh
   $replayer $f FTP $pno 1 > /dev/null 2>&1 &
-  timeout -k 0 -s SIGUSR1 3s ./fftp fftp.conf $pno > /dev/null 2>&1
-  
+  timeout -k 0 -s SIGUSR1 3s ./fftp ./fftp_afl.conf $pno > /dev/null 2>&1
+
   wait
   cov_data=$(gcovr -r .. -s | grep "[lb][a-z]*:")
   l_per=$(echo "$cov_data" | grep lines | cut -d" " -f2 | rev | cut -c2- | rev)
   l_abs=$(echo "$cov_data" | grep lines | cut -d" " -f3 | cut -c2-)
   b_per=$(echo "$cov_data" | grep branch | cut -d" " -f2 | rev | cut -c2- | rev)
   b_abs=$(echo "$cov_data" | grep branch | cut -d" " -f3 | cut -c2-)
-  
+
   echo "$time,$l_per,$l_abs,$b_per,$b_abs" >> $covfile
 done
 
 #process fuzzer-generated testcases
 count=0
-for f in $(echo $folder/$testdir/id*); do 
+for f in $(echo $folder/$testdir/id*); do
   time=$(stat -c %Y $f)
 
   #terminate running server(s)
   pkill fftp
-  
-  ftpclean  
+
+  ./ftpclean_afl.sh
   $replayer $f FTP $pno 1 > /dev/null 2>&1 &
-  timeout -k 0 -s SIGUSR1 3s ./fftp fftp.conf $pno > /dev/null 2>&1
+  timeout -k 0 -s SIGUSR1 3s ./fftp ./fftp_afl.conf $pno > /dev/null 2>&1
 
   wait
   count=$(expr $count + 1)
@@ -78,7 +78,7 @@ for f in $(echo $folder/$testdir/id*); do
   l_abs=$(echo "$cov_data" | grep lines | cut -d" " -f3 | cut -c2-)
   b_per=$(echo "$cov_data" | grep branch | cut -d" " -f2 | rev | cut -c2- | rev)
   b_abs=$(echo "$cov_data" | grep branch | cut -d" " -f3 | cut -c2-)
-  
+
   echo "$time,$l_per,$l_abs,$b_per,$b_abs" >> $covfile
 done
 
@@ -91,6 +91,6 @@ then
   l_abs=$(echo "$cov_data" | grep lines | cut -d" " -f3 | cut -c2-)
   b_per=$(echo "$cov_data" | grep branch | cut -d" " -f2 | rev | cut -c2- | rev)
   b_abs=$(echo "$cov_data" | grep branch | cut -d" " -f3 | cut -c2-)
-  
+
   echo "$time,$l_per,$l_abs,$b_per,$b_abs" >> $covfile
 fi

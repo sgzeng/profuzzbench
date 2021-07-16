@@ -1,41 +1,25 @@
-FROM ubuntu:16.04
+FROM symqemu
 
+USER root
 # Install common dependencies
 RUN apt-get -y update && \
     apt-get -y install sudo \ 
-    apt-utils \
     build-essential \
     openssl \
     clang \
     graphviz-dev \
     git \
-    libgnutls-dev \
-    python-pip \
+    libgnutls28-dev \
+    python3-pip \
     nano \
     net-tools \
     vim
 
-# Add a new user ubuntu, pass: ubuntu
-RUN groupadd ubuntu && \
-    useradd -rm -d /home/ubuntu -s /bin/bash -g ubuntu -G sudo -u 1000 ubuntu -p "$(openssl passwd -1 ubuntu)"
-
 # Use ubuntu as default username
-USER ubuntu
 WORKDIR /home/ubuntu
 
 # Download and compile AFLNet
 ENV LLVM_CONFIG="llvm-config-3.8"
-
-# Set up fuzzers
-RUN git clone https://github.com/profuzzbench/aflnet.git && \
-    cd aflnet && \
-    make clean all && \
-    cd llvm_mode && make
-
-RUN git clone https://github.com/profuzzbench/aflnwe.git && \
-    cd aflnwe && \
-    make clean all && \
-    cd llvm_mode && make
 
 # Set up environment variables for AFLNet
 ENV WORKDIR="/home/ubuntu/experiments"
@@ -45,6 +29,11 @@ ENV AFL_PATH="${AFLNET}"
 ENV AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 \
     AFL_SKIP_CPUFREQ=1 \
     AFL_NO_AFFINITY=1
+
+# Set up fuzzers
+RUN cd aflnet && \
+    sudo make clean all && \
+    cd llvm_mode && sudo make
 
 RUN mkdir $WORKDIR && \
     pip install gcovr
